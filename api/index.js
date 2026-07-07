@@ -283,7 +283,7 @@ module.exports = async (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${content.title} - Find Your Dream Career | JobFounder</title>
-  <meta name="google-site-verification" content="oOB4GFrNSNdykfLPFYsy8byFMtrbAiccGJfrX7_UcOU" />
+  <meta name="<meta name="google-site-verification" content="C8QwBCGZKs-FSw52IOS7PTs6asCSlNJUXxU-NC482e0" />" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
