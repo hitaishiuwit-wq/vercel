@@ -140,6 +140,58 @@ module.exports = async (req, res) => {
       return body;
     }
 
+    // ─── REMOVE "Other Jobs To Apply" ───────────────────────────────────────
+    function removeOtherJobsToApply(body) {
+      body = body.replace(/Other Jobs To Apply/gi, "");
+      body = body.replace(/<h[1-6][^>]*>[\s]*Other Jobs To Apply[\s]*<\/h[1-6]>/gi, "");
+      body = body.replace(/<div[^>]*class="[^"]*"[^>]*>[\s\S]*?Other Jobs To Apply[\s\S]*?<\/div>/gi, "");
+      body = body.replace(/<section[^>]*class="[^"]*"[^>]*>[\s\S]*?Other Jobs To Apply[\s\S]*?<\/section>/gi, "");
+      body = body.replace(/Other[\s]*Jobs[\s]*To[\s]*Apply/gi, "");
+      return body;
+    }
+
+    // ─── REMOVE SHARE SYMBOLS ──────────────────────────────────────────────
+    function removeShareSymbols(body) {
+      // Remove share containers
+      body = body.replace(/<[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*social[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*twitter[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*facebook[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*linkedin[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*pinterest[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*whatsapp[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*class="[^"]*telegram[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      body = body.replace(/<[^>]*id="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+      
+      // Remove share text
+      body = body.replace(/Share/gi, "");
+      body = body.replace(/Share[\s]*this/gi, "");
+      body = body.replace(/Share[\s]*job/gi, "");
+      body = body.replace(/Share[\s]*post/gi, "");
+      
+      // Remove SVG icons for sharing
+      body = body.replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, (match) => {
+        if (match.includes("share") || match.includes("twitter") || match.includes("facebook") || 
+            match.includes("linkedin") || match.includes("social") || match.includes("icon") ||
+            match.includes("pinterest") || match.includes("whatsapp") || match.includes("telegram")) {
+          return "";
+        }
+        return match;
+      });
+      
+      // Remove share buttons/links
+      body = body.replace(/<a[^>]*href="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/a>/gi, "");
+      body = body.replace(/<button[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/button>/gi, "");
+      
+      // Remove icon fonts for social media
+      body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*share[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
+      body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*twitter[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
+      body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*facebook[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
+      body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*linkedin[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
+      
+      return body;
+    }
+
     // ─── HTML rewrite ──────────────────────────────────────────────────────
     if (contentType.includes("text/html")) {
       let body = rewriteText(await response.text());
@@ -149,6 +201,12 @@ module.exports = async (req, res) => {
       
       // Block ads
       body = blockAds(body);
+      
+      // Remove "Other Jobs To Apply"
+      body = removeOtherJobsToApply(body);
+      
+      // Remove share symbols
+      body = removeShareSymbols(body);
 
       // ─── COMPLETE HOMEPAGE REDESIGN ─────────────────────────────────────
       if (req.url === "/" || req.url === "") {
@@ -699,6 +757,15 @@ module.exports = async (req, res) => {
           if (contentMatch) mainContent = contentMatch[1];
         }
 
+        // Remove any remaining "Other Jobs To Apply" from content
+        mainContent = mainContent.replace(/Other Jobs To Apply/gi, "");
+        mainContent = mainContent.replace(/Other[\s]*Jobs[\s]*To[\s]*Apply/gi, "");
+        
+        // Remove any share symbols from content
+        mainContent = mainContent.replace(/Share/gi, "");
+        mainContent = mainContent.replace(/<[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+        mainContent = mainContent.replace(/<[^>]*class="[^"]*social[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
+
         body = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -941,6 +1008,9 @@ module.exports = async (req, res) => {
       body = body.replace(/\.ads[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.ad-container[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.adsense[\s\S]*?\{[\s\S]*?\}/g, "");
+      // Remove share-related CSS
+      body = body.replace(/\.share[\s\S]*?\{[\s\S]*?\}/g, "");
+      body = body.replace(/\.social[\s\S]*?\{[\s\S]*?\}/g, "");
       res.setHeader("content-type", "text/css");
       return res.status(response.status).send(body);
     }
@@ -960,6 +1030,9 @@ module.exports = async (req, res) => {
       body = body.replace(/google_ad_client/g, "blocked_ad_client");
       body = body.replace(/adsbygoogle/g, "blocked_ads");
       body = body.replace(/pagead2\.googlesyndication\.com/g, "blocked.ad.domain");
+      // Remove share-related JS
+      body = body.replace(/share/g, "blocked_share");
+      body = body.replace(/social/g, "blocked_social");
       res.setHeader("content-type", contentType);
       return res.status(response.status).send(body);
     }
