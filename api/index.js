@@ -192,6 +192,31 @@ module.exports = async (req, res) => {
       return body;
     }
 
+    // ─── REMOVE "Close Copy link" ──────────────────────────────────────────
+    function removeCloseCopyLink(body) {
+      body = body.replace(/Close Copy link/gi, "");
+      body = body.replace(/Close[\s]*Copy[\s]*link/gi, "");
+      body = body.replace(/<[^>]*>[\s]*Close Copy link[\s]*<\/[^>]*>/gi, "");
+      body = body.replace(/Copy link/gi, "");
+      body = body.replace(/<[^>]*>[\s]*Copy link[\s]*<\/[^>]*>/gi, "");
+      body = body.replace(/Copy[\s]*link/gi, "");
+      body = body.replace(/Close/gi, (match) => {
+        // Only remove "Close" when it's part of "Close Copy link" context
+        return match;
+      });
+      return body;
+    }
+
+    // ─── REMOVE "Back to blog" ─────────────────────────────────────────────
+    function removeBackToBlog(body) {
+      body = body.replace(/Back to blog/gi, "");
+      body = body.replace(/Back[\s]*to[\s]*blog/gi, "");
+      body = body.replace(/<[^>]*>[\s]*Back to blog[\s]*<\/[^>]*>/gi, "");
+      body = body.replace(/<a[^>]*href="[^"]*blog[^"]*"[^>]*>[\s]*Back to blog[\s]*<\/a>/gi, "");
+      body = body.replace(/<a[^>]*>[\s]*Back to blog[\s]*<\/a>/gi, "");
+      return body;
+    }
+
     // ─── HTML rewrite ──────────────────────────────────────────────────────
     if (contentType.includes("text/html")) {
       let body = rewriteText(await response.text());
@@ -207,6 +232,12 @@ module.exports = async (req, res) => {
       
       // Remove share symbols
       body = removeShareSymbols(body);
+      
+      // Remove "Close Copy link"
+      body = removeCloseCopyLink(body);
+      
+      // Remove "Back to blog"
+      body = removeBackToBlog(body);
 
       // ─── COMPLETE HOMEPAGE REDESIGN ─────────────────────────────────────
       if (req.url === "/" || req.url === "") {
@@ -757,11 +788,15 @@ module.exports = async (req, res) => {
           if (contentMatch) mainContent = contentMatch[1];
         }
 
-        // Remove any remaining "Other Jobs To Apply" from content
+        // Remove all unwanted content from mainContent
         mainContent = mainContent.replace(/Other Jobs To Apply/gi, "");
         mainContent = mainContent.replace(/Other[\s]*Jobs[\s]*To[\s]*Apply/gi, "");
-        
-        // Remove any share symbols from content
+        mainContent = mainContent.replace(/Close Copy link/gi, "");
+        mainContent = mainContent.replace(/Close[\s]*Copy[\s]*link/gi, "");
+        mainContent = mainContent.replace(/Copy link/gi, "");
+        mainContent = mainContent.replace(/Copy[\s]*link/gi, "");
+        mainContent = mainContent.replace(/Back to blog/gi, "");
+        mainContent = mainContent.replace(/Back[\s]*to[\s]*blog/gi, "");
         mainContent = mainContent.replace(/Share/gi, "");
         mainContent = mainContent.replace(/<[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
         mainContent = mainContent.replace(/<[^>]*class="[^"]*social[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
