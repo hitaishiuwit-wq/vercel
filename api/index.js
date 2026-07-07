@@ -93,9 +93,28 @@ module.exports = async (req, res) => {
         .split("job4u").join("jobfounder")
         .split("privatejobsdelhi.com").join("jobfounder.com");
 
+    // ─── COMPANIES LIST ────────────────────────────────────────────────────────
+    const COMPANIES = [
+      "Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix", "Tesla",
+      "Infosys", "TCS", "Wipro", "HCL", "Accenture", "Deloitte", "PwC",
+      "KPMG", "EY", "McKinsey", "Boston Consulting Group", "IBM", "Oracle",
+      "SAP", "Salesforce", "Adobe", "Cisco", "Dell", "HP", "Intel", "AMD",
+      "Qualcomm", "NVIDIA", "Samsung", "Sony", "LG", "Panasonic", "Toshiba",
+      "Toyota", "Honda", "Nissan", "BMW", "Mercedes-Benz", "Ford", "General Motors",
+      "Volkswagen", "Audi", "Porsche", "Ferrari", "Lamborghini", "Rolls-Royce",
+      "Boeing", "Airbus", "Lockheed Martin", "Northrop Grumman", "Raytheon",
+      "SpaceX", "Blue Origin", "Virgin Galactic", "Uber", "Lyft", "Airbnb",
+      "Spotify", "Pinterest", "Snapchat", "TikTok", "Twitter", "LinkedIn",
+      "PayPal", "Square", "Stripe", "Robinhood", "Coinbase", "Blockchain",
+      "Disney", "Warner Bros", "Universal", "Paramount", "Sony Pictures",
+      "Amazon Studios", "Netflix Studios", "HBO", "Showtime", "Hulu",
+      "Zoom", "Slack", "Teams", "Discord", "Telegram", "WhatsApp",
+      "Shopify", "SquareSpace", "Wix", "WordPress", "Webflow", "Figma",
+      "Canva", "Adobe Creative Cloud", "Sketch", "InVision", "ProtoPie"
+    ];
+
     // ─── REMOVE DISCLAIMER ───────────────────────────────────────────────────
     function removeDisclaimer(body) {
-      // Remove disclaimer sections
       body = body.replace(/DISCLAIMER[\s\S]*?Welcome to Job4u\.[^<]*?\.com\.[\s\S]*?jobpostingcustomercare@gmail\.com\./gi, "");
       body = body.replace(/<div[^>]*class="[^"]*disclaimer[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
       body = body.replace(/<section[^>]*class="[^"]*disclaimer[^"]*"[^>]*>[\s\S]*?<\/section>/gi, "");
@@ -107,27 +126,17 @@ module.exports = async (req, res) => {
 
     // ─── BLOCK GOOGLE ADS ────────────────────────────────────────────────────
     function blockAds(body) {
-      // Block ad ID ca-pub-5953224202278307
       body = body.replace(/ca-pub-5953224202278307/g, "");
       body = body.replace(/<ins[^>]*data-ad-client="ca-pub-5953224202278307"[^>]*>[\s\S]*?<\/ins>/gi, "");
       body = body.replace(/<script[^>]*>.*?ca-pub-5953224202278307.*?<\/script>/gi, "");
-      
-      // Remove any ad containers
       body = body.replace(/<div[^>]*class="[^"]*ad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
       body = body.replace(/<div[^>]*id="[^"]*ad[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
       body = body.replace(/<div[^>]*class="[^"]*ads[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
       body = body.replace(/<div[^>]*class="[^"]*adsense[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
-      
-      // Remove ad iframes
       body = body.replace(/<iframe[^>]*src="[^"]*googleadservices[^"]*"[^>]*>[\s\S]*?<\/iframe>/gi, "");
       body = body.replace(/<iframe[^>]*src="[^"]*pagead2[^"]*"[^>]*>[\s\S]*?<\/iframe>/gi, "");
-      
-      // Remove ad links
       body = body.replace(/<a[^>]*href="https:\/\/pagead2\.googlesyndication\.com[^"]*"[^>]*>[\s\S]*?<\/a>/gi, "");
-      
-      // Remove Google AdSense scripts
       body = body.replace(/<script[^>]*src="[^"]*pagead2\.googlesyndication\.com[^"]*"[^>]*>[\s\S]*?<\/script>/gi, "");
-      
       return body;
     }
 
@@ -173,6 +182,11 @@ module.exports = async (req, res) => {
         };
 
         const content = extractContent();
+
+        // Generate company chips
+        const companyChips = COMPANIES.slice(0, 30).map(c => 
+          `<a href="/company/${encodeURIComponent(c)}" class="company-chip">${c}</a>`
+        ).join('');
 
         body = `<!DOCTYPE html>
 <html lang="en">
@@ -632,18 +646,7 @@ module.exports = async (req, res) => {
       <a href="/companies">View All →</a>
     </div>
     <div class="company-cloud">
-      ${COMPANIES ? COMPANIES.slice(0, 30).map(c => `<a href="/company/${encodeURIComponent(c)}" class="company-chip">${c}</a>`).join('') : `
-        <a href="#" class="company-chip">Google</a>
-        <a href="#" class="company-chip">Microsoft</a>
-        <a href="#" class="company-chip">Amazon</a>
-        <a href="#" class="company-chip">Apple</a>
-        <a href="#" class="company-chip">Meta</a>
-        <a href="#" class="company-chip">Netflix</a>
-        <a href="#" class="company-chip">Tesla</a>
-        <a href="#" class="company-chip">Infosys</a>
-        <a href="#" class="company-chip">TCS</a>
-        <a href="#" class="company-chip">Wipro</a>
-      `}
+      ${companyChips}
     </div>
 
     <div class="cta-banner">
