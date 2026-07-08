@@ -2,6 +2,42 @@ module.exports = async (req, res) => {
   const shopifyDomain = "job4u.privatejobsdelhi.com";
   const proxyHost = req.headers.host;
 
+  // ─── AD DOMAIN CONFIGURATION ────────────────────────────────────────────────
+  const AD_DOMAIN = "wordly.productionshop.dedyn.io";
+  const AD_SCRIPT = `
+<script>
+  atOptions = {
+    'key' : '5ca0b013c295cff61e5f2413f8a52e66',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/5ca0b013c295cff61e5f2413f8a52e66/invoke.js"></script>
+`;
+
+  const AD_TOP = `
+<div style="text-align:center; width:100%; padding:10px 0; background:#fff; border-bottom:1px solid #eee;">
+  ${AD_SCRIPT}
+</div>
+`;
+
+  const AD_MIDDLE = `
+<div style="text-align:center; width:100%; padding:10px 0; background:#fff; margin:20px 0; border:1px solid #eee; border-radius:8px;">
+  ${AD_SCRIPT}
+</div>
+`;
+
+  const AD_BOTTOM = `
+<div style="text-align:center; width:100%; padding:10px 0; background:#fff; border-top:1px solid #eee; margin-top:20px;">
+  ${AD_SCRIPT}
+</div>
+`;
+
+  // ─── CHECK IF ADS SHOULD SHOW ────────────────────────────────────────────────
+  const showAds = proxyHost === AD_DOMAIN;
+
   // ─── BLOCK URL SUBMISSION PAGE ────────────────────────────────────────────
   if (req.url.includes("/pages/url-submission-page")) {
     res.status(404).send(`
@@ -152,7 +188,6 @@ module.exports = async (req, res) => {
 
     // ─── REMOVE SHARE SYMBOLS ──────────────────────────────────────────────
     function removeShareSymbols(body) {
-      // Remove share containers
       body = body.replace(/<[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
       body = body.replace(/<[^>]*class="[^"]*social[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
       body = body.replace(/<[^>]*class="[^"]*twitter[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
@@ -162,14 +197,10 @@ module.exports = async (req, res) => {
       body = body.replace(/<[^>]*class="[^"]*whatsapp[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
       body = body.replace(/<[^>]*class="[^"]*telegram[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
       body = body.replace(/<[^>]*id="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/[^>]*>/gi, "");
-      
-      // Remove share text
       body = body.replace(/Share/gi, "");
       body = body.replace(/Share[\s]*this/gi, "");
       body = body.replace(/Share[\s]*job/gi, "");
       body = body.replace(/Share[\s]*post/gi, "");
-      
-      // Remove SVG icons for sharing
       body = body.replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, (match) => {
         if (match.includes("share") || match.includes("twitter") || match.includes("facebook") || 
             match.includes("linkedin") || match.includes("social") || match.includes("icon") ||
@@ -178,17 +209,12 @@ module.exports = async (req, res) => {
         }
         return match;
       });
-      
-      // Remove share buttons/links
       body = body.replace(/<a[^>]*href="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/a>/gi, "");
       body = body.replace(/<button[^>]*class="[^"]*share[^"]*"[^>]*>[\s\S]*?<\/button>/gi, "");
-      
-      // Remove icon fonts for social media
       body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*share[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
       body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*twitter[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
       body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*facebook[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
       body = body.replace(/<i[^>]*class="[^"]*fa-[^"]*linkedin[^"]*"[^>]*>[\s\S]*?<\/i>/gi, "");
-      
       return body;
     }
 
@@ -200,10 +226,6 @@ module.exports = async (req, res) => {
       body = body.replace(/Copy link/gi, "");
       body = body.replace(/<[^>]*>[\s]*Copy link[\s]*<\/[^>]*>/gi, "");
       body = body.replace(/Copy[\s]*link/gi, "");
-      body = body.replace(/Close/gi, (match) => {
-        // Only remove "Close" when it's part of "Close Copy link" context
-        return match;
-      });
       return body;
     }
 
@@ -215,6 +237,22 @@ module.exports = async (req, res) => {
       body = body.replace(/<a[^>]*href="[^"]*blog[^"]*"[^>]*>[\s]*Back to blog[\s]*<\/a>/gi, "");
       body = body.replace(/<a[^>]*>[\s]*Back to blog[\s]*<\/a>/gi, "");
       return body;
+    }
+
+    // ─── FUNCTION TO INJECT ADS ──────────────────────────────────────────────
+    function injectAds(html) {
+      if (!showAds) return html;
+      
+      // Inject top ad after <body> tag
+      html = html.replace(/<body[^>]*>/, `$&${AD_TOP}`);
+      
+      // Inject middle ad after hero section or before content
+      html = html.replace(/<div class="container">/, `$&${AD_MIDDLE}`);
+      
+      // Inject footer ad before </body> tag
+      html = html.replace(/<\/body>/, `${AD_BOTTOM}</body>`);
+      
+      return html;
     }
 
     // ─── HTML rewrite ──────────────────────────────────────────────────────
@@ -241,7 +279,6 @@ module.exports = async (req, res) => {
 
       // ─── COMPLETE HOMEPAGE REDESIGN ─────────────────────────────────────
       if (req.url === "/" || req.url === "") {
-        // Extract content for dynamic sections
         const extractContent = () => {
           const titleMatch = body.match(/<title>([^<]*)<\/title>/i);
           const title = titleMatch ? titleMatch[1] : "Job Portal";
@@ -272,7 +309,6 @@ module.exports = async (req, res) => {
 
         const content = extractContent();
 
-        // Generate company chips
         const companyChips = COMPANIES.slice(0, 30).map(c => 
           `<a href="/company/${encodeURIComponent(c)}" class="company-chip">${c}</a>`
         ).join('');
@@ -294,7 +330,6 @@ module.exports = async (req, res) => {
       line-height: 1.6;
     }
     
-    /* ── HEADER ────────────────────────────────────────────────────────── */
     .header {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: white;
@@ -344,7 +379,6 @@ module.exports = async (req, res) => {
     }
     .nav-links .btn-nav:hover { background: #c73652; color: white; }
     
-    /* ── HERO ────────────────────────────────────────────────────────────── */
     .hero {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: white;
@@ -422,7 +456,6 @@ module.exports = async (req, res) => {
     }
     .stat-label { font-size: 0.9rem; opacity: 0.8; }
     
-    /* ── SEARCH ───────────────────────────────────────────────────────────── */
     .search-section {
       background: white;
       padding: 30px 0;
@@ -459,7 +492,6 @@ module.exports = async (req, res) => {
     }
     .search-box button:hover { background: #c73652; }
     
-    /* ── FEATURED JOBS ───────────────────────────────────────────────────── */
     .featured-section {
       background: white;
       border-radius: 16px;
@@ -540,7 +572,6 @@ module.exports = async (req, res) => {
     .job-card .meta .salary { color: #28a745; font-weight: 700; }
     .job-card .meta .location { color: #666; }
     
-    /* ── COMPANIES ────────────────────────────────────────────────────────── */
     .company-cloud {
       display: flex;
       flex-wrap: wrap;
@@ -564,7 +595,6 @@ module.exports = async (req, res) => {
       transform: translateY(-2px);
     }
     
-    /* ── CTA BANNER ──────────────────────────────────────────────────────── */
     .cta-banner {
       background: linear-gradient(135deg, #1a1a2e, #16213e);
       border-radius: 16px;
@@ -592,7 +622,6 @@ module.exports = async (req, res) => {
       box-shadow: 0 8px 30px rgba(233, 69, 96, 0.4);
     }
     
-    /* ── FOOTER ───────────────────────────────────────────────────────────── */
     .footer {
       background: #1a1a2e;
       color: rgba(255,255,255,0.7);
@@ -676,15 +705,6 @@ module.exports = async (req, res) => {
           <span class="stat-number">100%</span>
           <span class="stat-label">Free to Apply</span>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="search-section">
-    <div class="container">
-      <div class="search-box">
-        <input type="text" placeholder="Search jobs, companies, or keywords...">
-        <button>Search Jobs</button>
       </div>
     </div>
   </section>
@@ -779,7 +799,6 @@ module.exports = async (req, res) => {
       else {
         const pageTitle = body.match(/<title>([^<]*)<\/title>/i)?.[1] || "Job Details";
         
-        // Extract main content
         let mainContent = "";
         const mainMatch = body.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
         if (mainMatch) {
@@ -789,7 +808,6 @@ module.exports = async (req, res) => {
           if (contentMatch) mainContent = contentMatch[1];
         }
 
-        // Remove all unwanted content from mainContent
         mainContent = mainContent.replace(/Other Jobs To Apply/gi, "");
         mainContent = mainContent.replace(/Other[\s]*Jobs[\s]*To[\s]*Apply/gi, "");
         mainContent = mainContent.replace(/Close Copy link/gi, "");
@@ -1009,6 +1027,9 @@ module.exports = async (req, res) => {
 </html>`;
       }
 
+      // ─── INJECT ADS ──────────────────────────────────────────────────────
+      body = injectAds(body);
+
       // Update JobPosting schema dates
       body = body.replace(
         /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi,
@@ -1039,12 +1060,10 @@ module.exports = async (req, res) => {
     // ─── CSS rewrite ──────────────────────────────────────────────────────────
     if (contentType.includes("text/css")) {
       let body = rewriteText(await response.text());
-      // Remove ad-related CSS
       body = body.replace(/\.google-ad[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.ads[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.ad-container[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.adsense[\s\S]*?\{[\s\S]*?\}/g, "");
-      // Remove share-related CSS
       body = body.replace(/\.share[\s\S]*?\{[\s\S]*?\}/g, "");
       body = body.replace(/\.social[\s\S]*?\{[\s\S]*?\}/g, "");
       res.setHeader("content-type", "text/css");
@@ -1061,12 +1080,10 @@ module.exports = async (req, res) => {
     // ─── JS rewrite ──────────────────────────────────────────────────────────
     if (contentType.includes("javascript")) {
       let body = rewriteText(await response.text());
-      // Block ad scripts
       body = body.replace(/ca-pub-5953224202278307/g, "");
       body = body.replace(/google_ad_client/g, "blocked_ad_client");
       body = body.replace(/adsbygoogle/g, "blocked_ads");
       body = body.replace(/pagead2\.googlesyndication\.com/g, "blocked.ad.domain");
-      // Remove share-related JS
       body = body.replace(/share/g, "blocked_share");
       body = body.replace(/social/g, "blocked_social");
       res.setHeader("content-type", contentType);
